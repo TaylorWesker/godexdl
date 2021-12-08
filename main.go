@@ -2,6 +2,7 @@ package main
 
 import (
     "fmt"
+    "sync"
     "os"
     "strconv"
     "io/ioutil"
@@ -12,11 +13,14 @@ import (
     "godexdl/api"
 )
 
+var wg *sync.WaitGroup
+
 type DownloadInfo struct {
     BaseUrl string `json:"baseUrl"`
 }
 
 func downloadFile(url string, i int) {
+    defer wg.Done()
     res, err := http.Get(url)
     if err != nil {
         log.Fatal(err)
@@ -80,8 +84,10 @@ func downloadManga(id string) {
 
             for i, file := range c.Attributes.Data {
                 path := "/data/"+ c.Attributes.Hash + "/" + file
-                downloadFile(base + path, i)
+                wg.Add(1)
+                go downloadFile(base + path, i)
             }
+            wg.Wait()
             os.Chdir("..")
         }
         os.Chdir("..")
@@ -89,6 +95,7 @@ func downloadManga(id string) {
 }
 
 func main() {
+    wg = new(sync.WaitGroup)
 	id := "80422e14-b9ad-4fda-970f-de370d5fa4e5"
     downloadManga(id)
 }
