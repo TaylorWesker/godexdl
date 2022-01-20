@@ -1,40 +1,49 @@
 package api
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"encoding/json"
 )
 
-type ChapterAttribute struct {
-	Hash string `json:"hash"`
-	Data []string `json:"data"`
-	DataSaver []string `json:"dataSaver"`
+type ErrorReport struct {
+	Id     string `json:"id"`
+	Status int    `json:"status"`
+	Title  string `json:"title"`
+	Detail string `json:"detail"`
 }
 
 type ChapterData struct {
-	Id string `json:"id"`
-	Attributes ChapterAttribute `json:"attributes"`
+	Hash string   `json:"hash"`
+	Data []string `json:"data"`
 }
 
 type ChapterResponse struct {
-	Data ChapterData `json:"data"`
+	Result  string        `json:"result"`
+	Errors  []ErrorReport `json:"errors"`
+	BaseUrl string        `json:"baseUrl"`
+	Chapter ChapterData   `json:"chapter"`
 }
 
-func GetChapter(id string) ChapterData {
+func GetChapter(id string) ChapterResponse {
 	ret := ChapterResponse{}
-	resp, err := http.Get("https://api.mangadex.org/chapter/"+id)
-   	if err != nil {
-      	log.Fatalln(err)
-   	}
-	//We Read the response body on the line below.
-   	body, err := ioutil.ReadAll(resp.Body)
-   	if err != nil {
-      	log.Fatalln(err)
-   	}
-	//Convert the body to type string
-   	json.Unmarshal(body, &ret)
+	resp, err := http.Get("https://api.mangadex.org/at-home/server/" + id)
 
-	return ret.Data
+	if err != nil {
+		log.Fatalln(err)
+	}
+	//We Read the response body on the line below.
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	//Convert the body to type string
+	json.Unmarshal(body, &ret)
+
+	if ret.Result != "ok" {
+		log.Fatalf("Api response is %v %v\n", ret.Errors, ret.Result)
+	}
+
+	return ret
 }
