@@ -19,11 +19,45 @@ type ChapterData struct {
 	Data []string `json:"data"`
 }
 
+type ChapAtt struct {
+	Chapter     string
+	Title       string
+	ExternalUrl string
+}
+
+type ChapterFeed struct {
+	Id         string
+	Attributes ChapAtt
+}
+
+type ChapF struct {
+	Result string
+	Data   []ChapterFeed
+}
+
 type ChapterResponse struct {
 	Result  string        `json:"result"`
 	Errors  []ErrorReport `json:"errors"`
 	BaseUrl string        `json:"baseUrl"`
 	Chapter ChapterData   `json:"chapter"`
+}
+
+func GetAllChapter(mangaId string) ChapF {
+	ret := ChapF{}
+	resp, err := http.Get("https://api.mangadex.org/manga/" + mangaId + "/feed?translatedLanguage[]=en&limit=500")
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	//Convert the body to type string
+	json.Unmarshal(body, &ret)
+
+	return ret
 }
 
 func GetChapter(id string) ChapterResponse {
